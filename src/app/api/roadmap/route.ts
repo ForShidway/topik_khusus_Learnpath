@@ -43,6 +43,11 @@ Maksimal 5 item setiap kategori.
     const text =
       result.response.text();
 
+    console.log("Gemini Response:");
+    console.log(text);
+
+
+
     return Response.json({
       success: true,
       roadmap: text,

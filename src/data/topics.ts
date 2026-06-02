@@ -10,11 +10,6 @@ export const topics = [
     slug: "web-development",
   },
   {
-    id: 3,
-    title: "Cyber Security",
-    slug: "cyber-security",
-  },
-  {
     id: 4,
     title: "Data Analyst",
     slug: "data-analyst",
