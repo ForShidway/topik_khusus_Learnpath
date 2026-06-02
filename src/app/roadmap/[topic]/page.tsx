@@ -42,6 +42,7 @@ export default function RoadmapPage() {
   const [loading, setLoading] = useState(true);
   const [topic, setTopic] = useState("");
   const [level, setLevel] = useState("");
+  const [fromSearch, setFromSearch] = useState(false);
 
   const searchVideo = async (keyword: string) => {
     const response = await fetch("/api/youtube", {
@@ -59,13 +60,23 @@ export default function RoadmapPage() {
     const params = new URLSearchParams(window.location.search);
     const lvl = params.get("level") || "beginner";
 
-    setTopic(topicSlug.replaceAll("-", " "));
-    setLevel(lvl);
+    const isSearchMode = lvl === "all";
+    setFromSearch(isSearchMode);
+
+    // Pretty-print topic name
+    const topicName = topicSlug
+      .replaceAll("-", " ")
+      .replace(/\b\w/g, (c) => c.toUpperCase());
+    setTopic(topicName);
+    setLevel(isSearchMode ? "all" : lvl);
+
+    // Send "beginner" as default level hint when mode is "all"
+    const apiLevel = isSearchMode ? "beginner" : lvl;
 
     fetch("/api/roadmap", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ topic: topicSlug, level: lvl }),
+      body: JSON.stringify({ topic: topicSlug, level: apiLevel }),
     })
       .then((res) => res.json())
       .then(async (data) => {
@@ -77,7 +88,6 @@ export default function RoadmapPage() {
         setRoadmap(roadmapData);
 
         const allVideos: any = {};
-
         for (const lv of ["beginner", "intermediate", "advanced"]) {
           allVideos[lv] = [];
           for (const item of roadmapData[lv]) {
@@ -114,14 +124,11 @@ export default function RoadmapPage() {
             animation: "spin 0.9s linear infinite",
           }}
         />
-        <p
-          style={{
-            color: "#fff",
-            fontSize: "1.2rem",
-            fontWeight: 600,
-          }}
-        >
+        <p style={{ color: "#fff", fontSize: "1.2rem", fontWeight: 600 }}>
           🤖 AI sedang menyiapkan roadmap-mu…
+        </p>
+        <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.9rem" }}>
+          Mengumpulkan video terbaik untuk kamu
         </p>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
@@ -133,38 +140,18 @@ export default function RoadmapPage() {
       <section
         style={{
           background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-          padding: "56px 40px 80px",
+          padding: "56px 40px 90px",
           position: "relative",
           overflow: "hidden",
         }}
       >
-        <div
-          style={{
-            position: "absolute",
-            top: "-60px",
-            right: "-60px",
-            width: "280px",
-            height: "280px",
-            borderRadius: "50%",
-            background: "rgba(255,255,255,0.07)",
-            pointerEvents: "none",
-          }}
-        />
+        <div style={{ position:"absolute", top:"-60px", right:"-60px", width:"280px", height:"280px", borderRadius:"50%", background:"rgba(255,255,255,0.07)", pointerEvents:"none" }} />
+        <div style={{ position:"absolute", bottom:"-40px", left:"30px", width:"180px", height:"180px", borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
 
         <div style={{ maxWidth: "1100px", margin: "0 auto", position: "relative", zIndex: 1 }}>
           <a
             href="/"
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "6px",
-              color: "rgba(255,255,255,0.8)",
-              textDecoration: "none",
-              fontSize: "0.9rem",
-              fontWeight: 500,
-              marginBottom: "24px",
-              transition: "color 0.2s",
-            }}
+            style={{ display:"inline-flex", alignItems:"center", gap:"6px", color:"rgba(255,255,255,0.8)", textDecoration:"none", fontSize:"0.9rem", fontWeight:500, marginBottom:"24px", transition:"color 0.2s" }}
             onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "#fff")}
             onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "rgba(255,255,255,0.8)")}
           >
@@ -172,48 +159,26 @@ export default function RoadmapPage() {
           </a>
 
           <h1
-            style={{
-              fontSize: "clamp(1.8rem, 4vw, 2.8rem)",
-              fontWeight: 800,
-              color: "#fff",
-              textTransform: "capitalize",
-              marginBottom: "10px",
-              textShadow: "0 2px 16px rgba(0,0,0,0.15)",
-            }}
+            style={{ fontSize:"clamp(1.8rem, 4vw, 2.8rem)", fontWeight:800, color:"#fff", marginBottom:"12px", textShadow:"0 2px 16px rgba(0,0,0,0.15)" }}
           >
             📚 {topic}
           </h1>
 
-          <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
-            {level && (
-              <span
-                style={{
-                  background: "rgba(255,255,255,0.2)",
-                  border: "1px solid rgba(255,255,255,0.35)",
-                  color: "#fff",
-                  borderRadius: "999px",
-                  padding: "5px 16px",
-                  fontSize: "0.82rem",
-                  fontWeight: 600,
-                  backdropFilter: "blur(6px)",
-                }}
-              >
+          <div style={{ display:"flex", gap:"10px", flexWrap:"wrap" }}>
+            {fromSearch ? (
+              <span style={{ background:"rgba(253,230,138,0.25)", border:"1px solid rgba(253,230,138,0.5)", color:"#fde68a", borderRadius:"999px", padding:"5px 16px", fontSize:"0.82rem", fontWeight:600, backdropFilter:"blur(6px)" }}>
+                🔍 Hasil Pencarian
+              </span>
+            ) : (
+              <span style={{ background:"rgba(255,255,255,0.2)", border:"1px solid rgba(255,255,255,0.35)", color:"#fff", borderRadius:"999px", padding:"5px 16px", fontSize:"0.82rem", fontWeight:600, backdropFilter:"blur(6px)" }}>
                 Level Mulai: {level.charAt(0).toUpperCase() + level.slice(1)}
               </span>
             )}
-            <span
-              style={{
-                background: "rgba(255,255,255,0.2)",
-                border: "1px solid rgba(255,255,255,0.35)",
-                color: "#fff",
-                borderRadius: "999px",
-                padding: "5px 16px",
-                fontSize: "0.82rem",
-                fontWeight: 600,
-                backdropFilter: "blur(6px)",
-              }}
-            >
+            <span style={{ background:"rgba(255,255,255,0.2)", border:"1px solid rgba(255,255,255,0.35)", color:"#fff", borderRadius:"999px", padding:"5px 16px", fontSize:"0.82rem", fontWeight:600, backdropFilter:"blur(6px)" }}>
               🎬 Learning Roadmap
+            </span>
+            <span style={{ background:"rgba(255,255,255,0.2)", border:"1px solid rgba(255,255,255,0.35)", color:"#fff", borderRadius:"999px", padding:"5px 16px", fontSize:"0.82rem", fontWeight:600, backdropFilter:"blur(6px)" }}>
+              3 Level tersedia
             </span>
           </div>
         </div>
@@ -223,7 +188,7 @@ export default function RoadmapPage() {
       <div
         style={{
           maxWidth: "1100px",
-          margin: "-40px auto 0",
+          margin: "-44px auto 0",
           padding: "0 32px 80px",
           position: "relative",
           zIndex: 2,
@@ -237,10 +202,10 @@ export default function RoadmapPage() {
             <section
               key={lv}
               style={{
-                marginBottom: "40px",
+                marginBottom: "32px",
                 borderRadius: "24px",
                 overflow: "hidden",
-                boxShadow: "0 4px 32px rgba(99,102,241,0.08)",
+                boxShadow: "0 4px 32px rgba(99,102,241,0.09)",
               }}
             >
               {/* Section header */}
@@ -248,24 +213,18 @@ export default function RoadmapPage() {
                 style={{
                   background: cfg.bg,
                   borderBottom: `2px solid ${cfg.accent}`,
-                  padding: "24px 32px",
+                  padding: "22px 32px",
                   display: "flex",
                   alignItems: "center",
-                  gap: "12px",
+                  gap: "14px",
                 }}
               >
-                <span style={{ fontSize: "1.6rem" }}>{cfg.icon}</span>
+                <span style={{ fontSize: "1.8rem" }}>{cfg.icon}</span>
                 <div>
-                  <h2
-                    style={{
-                      fontSize: "1.2rem",
-                      fontWeight: 800,
-                      color: "#1e1b4b",
-                    }}
-                  >
+                  <h2 style={{ fontSize:"1.2rem", fontWeight:800, color:"#1e1b4b" }}>
                     {cfg.label}
                   </h2>
-                  <p style={{ color: "#6b7280", fontSize: "0.82rem", marginTop: "2px" }}>
+                  <p style={{ color:"#6b7280", fontSize:"0.82rem", marginTop:"2px" }}>
                     {lvVideos.length} video belajar tersedia
                   </p>
                 </div>
@@ -275,9 +234,10 @@ export default function RoadmapPage() {
                     background: cfg.badge,
                     color: "#fff",
                     borderRadius: "999px",
-                    padding: "4px 16px",
-                    fontSize: "0.8rem",
+                    padding: "5px 18px",
+                    fontSize: "0.78rem",
                     fontWeight: 700,
+                    letterSpacing: "0.05em",
                   }}
                 >
                   {cfg.label.toUpperCase()}
@@ -285,21 +245,16 @@ export default function RoadmapPage() {
               </div>
 
               {/* Videos grid */}
-              <div
-                style={{
-                  background: "#fff",
-                  padding: "28px 32px",
-                }}
-              >
+              <div style={{ background: "#fff", padding: "28px 32px" }}>
                 {lvVideos.length === 0 ? (
-                  <p style={{ color: "#9ca3af", textAlign: "center", padding: "20px 0" }}>
+                  <p style={{ color:"#9ca3af", textAlign:"center", padding:"24px 0", fontSize:"0.9rem" }}>
                     Tidak ada video tersedia untuk level ini.
                   </p>
                 ) : (
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))",
+                      gridTemplateColumns: "repeat(auto-fill, minmax(270px, 1fr))",
                       gap: "20px",
                     }}
                   >
