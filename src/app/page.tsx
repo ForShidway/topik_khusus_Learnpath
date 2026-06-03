@@ -108,6 +108,7 @@ export default function HomePage() {
             />
 
             <button
+              id="btn-cari-materi"
               onClick={handleSearch}
               disabled={!searchQuery.trim()}
               style={{
@@ -170,6 +171,13 @@ export default function HomePage() {
             ))}
           </div>
         </div>
+
+        {/* Hide search button on mobile */}
+        <style>{`
+          @media (max-width: 640px) {
+            #btn-cari-materi { display: none !important; }
+          }
+        `}</style>
       </section>
 
       {/* ── Topic Cards Section ── */}

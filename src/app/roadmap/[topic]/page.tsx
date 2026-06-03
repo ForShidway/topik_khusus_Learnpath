@@ -43,6 +43,7 @@ export default function RoadmapPage() {
   const [topic, setTopic] = useState("");
   const [level, setLevel] = useState("");
   const [fromSearch, setFromSearch] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const searchVideo = async (keyword: string) => {
     const response = await fetch("/api/youtube", {
@@ -80,23 +81,43 @@ export default function RoadmapPage() {
     })
       .then((res) => res.json())
       .then(async (data) => {
+        // Cek jika API gagal atau roadmap tidak ada
+        if (!data.success || !data.roadmap) {
+          setError(data.error || "AI gagal menghasilkan roadmap. Coba lagi.");
+          setLoading(false);
+          return;
+        }
+
         const cleaned = data.roadmap
           .replace("```json", "")
-          .replace("```", "");
+          .replace("```", "")
+          .trim();
 
-        const roadmapData = JSON.parse(cleaned);
+        let roadmapData: RoadmapData;
+        try {
+          roadmapData = JSON.parse(cleaned);
+        } catch {
+          setError("Format roadmap tidak valid. Silakan coba lagi.");
+          setLoading(false);
+          return;
+        }
+
         setRoadmap(roadmapData);
 
         const allVideos: any = {};
         for (const lv of ["beginner", "intermediate", "advanced"]) {
           allVideos[lv] = [];
-          for (const item of roadmapData[lv]) {
+          for (const item of roadmapData[lv] ?? []) {
             const video = await searchVideo(item);
             if (video) allVideos[lv].push(video);
           }
         }
 
         setVideos(allVideos);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError("Terjadi kesalahan jaringan: " + err.message);
         setLoading(false);
       });
   }, []);
@@ -133,6 +154,47 @@ export default function RoadmapPage() {
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
+
+  if (error)
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: "16px",
+          background: "linear-gradient(135deg, #1e1b4b 0%, #312e81 100%)",
+          padding: "40px",
+          textAlign: "center",
+        }}
+      >
+        <div style={{ fontSize: "4rem" }}>⚠️</div>
+        <h2 style={{ color: "#fff", fontSize: "1.5rem", fontWeight: 700 }}>
+          Gagal Memuat Roadmap
+        </h2>
+        <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "0.95rem", maxWidth: "480px" }}>
+          {error}
+        </p>
+        <a
+          href="/"
+          style={{
+            marginTop: "8px",
+            background: "linear-gradient(135deg, #667eea, #764ba2)",
+            color: "#fff",
+            padding: "12px 28px",
+            borderRadius: "999px",
+            textDecoration: "none",
+            fontWeight: 600,
+            fontSize: "0.9rem",
+          }}
+        >
+          ← Kembali ke Home
+        </a>
+      </div>
+    );
+
 
   return (
     <main style={{ minHeight: "100vh" }}>
