@@ -68,10 +68,25 @@ Maksimal 5 item setiap kategori.
     });
 
   } catch (error) {
+    console.error("Gemini API Error:", error);
+    const errString = String(error);
+    
+    let friendlyMessage = "AI gagal menghasilkan roadmap. Silakan coba lagi.";
+    if (
+      errString.includes("429") ||
+      errString.toLowerCase().includes("quota") ||
+      errString.toLowerCase().includes("rate limit") ||
+      errString.toLowerCase().includes("too many requests") ||
+      errString.toLowerCase().includes("limit exceeded")
+    ) {
+      friendlyMessage = "Batas kuota pencarian (Limit API) AI telah tercapai. Silakan tunggu sampai jam 00.00. lalu coba lagi.";
+    } else {
+      friendlyMessage = `Gagal membuat roadmap: ${errString.slice(0, 150)}${errString.length > 150 ? "..." : ""}`;
+    }
 
     return Response.json({
       success: false,
-      error: String(error),
+      error: friendlyMessage,
     });
   }
 }
