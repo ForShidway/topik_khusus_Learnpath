@@ -129,7 +129,9 @@ export async function login(
     console.error("Login Error:", error);
     return {
       errors: {
-        general: [error?.message || "Terjadi kesalahan server. Coba lagi."],
+        general: [
+            (error as Error).message || "Terjadi kesalahan server. Coba lagi.",
+        ],
       },
     };
   }

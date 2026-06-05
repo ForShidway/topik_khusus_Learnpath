@@ -1,6 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { encrypt, decrypt } from "./session-core";
+import { SessionPayload } from "../types/session";
 
 // ── Buat session & simpan ke cookie ──────────────────────────────────
 export async function createSession(
