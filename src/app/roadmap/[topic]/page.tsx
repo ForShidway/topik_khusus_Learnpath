@@ -2,6 +2,7 @@
 
 import VideoCard from "@/src/components/VideoCard";
 import { useEffect, useState } from "react";
+import toast from "react-hot-toast";
 
 interface RoadmapData {
   beginner: string[];
@@ -44,6 +45,7 @@ export default function RoadmapPage() {
   const [level, setLevel] = useState("");
   const [fromSearch, setFromSearch] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savedVideos, setSavedVideos] = useState<string[]>([]);
 
   const searchVideo = async (keyword: string) => {
     const response = await fetch("/api/youtube", {
@@ -56,6 +58,16 @@ export default function RoadmapPage() {
   };
 
   useEffect(() => {
+    // Fetch riwayat video yang disimpan (jika login)
+    fetch("/api/history")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.success) {
+          setSavedVideos(data.history.map((h: any) => h.videoUrl));
+        }
+      })
+      .catch(() => {});
+
     const path = window.location.pathname;
     const topicSlug = decodeURIComponent(path.split("/").pop() || "");
     const params = new URLSearchParams(window.location.search);
@@ -105,7 +117,7 @@ export default function RoadmapPage() {
         setRoadmap(roadmapData);
 
         const allVideos: any = {};
-        for (const lv of ["beginner", "intermediate", "advanced"]) {
+        for (const lv of ["beginner", "intermediate", "advanced"] as const) {
           allVideos[lv] = [];
           for (const item of roadmapData[lv] ?? []) {
             const video = await searchVideo(item);
@@ -121,6 +133,41 @@ export default function RoadmapPage() {
         setLoading(false);
       });
   }, []);
+
+  const handleSave = async (video: any) => {
+    const videoUrl = `https://youtube.com/watch?v=${video.id.videoId}`;
+    try {
+      const res = await fetch("/api/history", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          topic,
+          videoTitle: video.snippet.title,
+          videoUrl,
+          thumbnail: video.snippet.thumbnails.high.url,
+        }),
+      });
+
+      if (res.status === 401) {
+        toast.error("Silakan login untuk menyimpan video");
+        return;
+      }
+
+      const data = await res.json();
+      if (data.success) {
+        setSavedVideos((prev) => [...prev, videoUrl]);
+        if (data.alreadySaved) {
+          toast.success("Video sudah tersimpan sebelumnya!");
+        } else {
+          toast.success("Video berhasil disimpan!");
+        }
+      } else {
+        toast.error(data.error || "Gagal menyimpan video");
+      }
+    } catch {
+      toast.error("Terjadi kesalahan jaringan");
+    }
+  };
 
   if (loading)
     return (
@@ -320,14 +367,20 @@ export default function RoadmapPage() {
                       gap: "20px",
                     }}
                   >
-                    {lvVideos.map((video: any) => (
-                      <VideoCard
-                        key={video.id.videoId}
-                        title={video.snippet.title}
-                        thumbnail={video.snippet.thumbnails.high.url}
-                        url={`https://youtube.com/watch?v=${video.id.videoId}`}
-                      />
-                    ))}
+                    {lvVideos.map((video: any) => {
+                      const videoUrl = `https://youtube.com/watch?v=${video.id.videoId}`;
+                      const isSaved = savedVideos.includes(videoUrl);
+                      return (
+                        <VideoCard
+                          key={video.id.videoId}
+                          title={video.snippet.title}
+                          thumbnail={video.snippet.thumbnails.high.url}
+                          url={videoUrl}
+                          onSave={() => handleSave(video)}
+                          isSaved={isSaved}
+                        />
+                      );
+                    })}
                   </div>
                 )}
               </div>

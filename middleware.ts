@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { decrypt } from "@/src/lib/session";
+import { decrypt } from "@/src/lib/session-core";
 
 // Route yang butuh login
 const protectedRoutes = ["/dashboard"];

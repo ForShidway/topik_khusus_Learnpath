@@ -1,10 +1,14 @@
+"use client";
+
 interface Props {
   title: string;
   thumbnail: string;
   url: string;
+  onSave?: (e: React.MouseEvent) => void;
+  isSaved?: boolean;
 }
 
-export default function VideoCard({ title, thumbnail, url }: Props) {
+export default function VideoCard({ title, thumbnail, url, onSave, isSaved }: Props) {
   return (
     <a
       href={url}
@@ -94,21 +98,49 @@ export default function VideoCard({ title, thumbnail, url }: Props) {
         >
           {title}
         </p>
-        <span
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "4px",
-            background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
-            color: "#fff",
-            fontSize: "0.75rem",
-            fontWeight: 600,
-            padding: "4px 12px",
-            borderRadius: "999px",
-          }}
-        >
-          ▶ Tonton
-        </span>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <span
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "4px",
+              background: "linear-gradient(135deg, #6366f1, #8b5cf6)",
+              color: "#fff",
+              fontSize: "0.75rem",
+              fontWeight: 600,
+              padding: "4px 12px",
+              borderRadius: "999px",
+            }}
+          >
+            ▶ Tonton
+          </span>
+
+          {onSave && (
+            <button
+              onClick={(e) => {
+                e.preventDefault();
+                onSave(e);
+              }}
+              disabled={isSaved}
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: "4px",
+                background: isSaved ? "#10b981" : "#f3f4f6",
+                color: isSaved ? "#fff" : "#4b5563",
+                border: "none",
+                fontSize: "0.75rem",
+                fontWeight: 600,
+                padding: "4px 12px",
+                borderRadius: "999px",
+                cursor: isSaved ? "default" : "pointer",
+                transition: "background 0.2s",
+              }}
+            >
+              {isSaved ? "✅ Tersimpan" : "💾 Simpan"}
+            </button>
+          )}
+        </div>
       </div>
 
       <style>{`

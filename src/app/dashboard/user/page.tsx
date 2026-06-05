@@ -1,10 +1,17 @@
 import { getSession } from "@/src/lib/session";
 import { logout } from "@/src/app/actions/auth";
 import { redirect } from "next/navigation";
+import { connectDB } from "@/src/lib/mongodb";
+import WatchHistory from "@/src/models/WatchHistory";
+import VideoCard from "@/src/components/VideoCard";
 
 export default async function UserDashboardPage() {
   const session = await getSession();
   if (!session) redirect("/login");
+
+  await connectDB();
+  const history = await WatchHistory.find({ userId: session.userId }).sort({ savedAt: -1 }).lean();
+  const uniqueTopics = new Set(history.map(h => h.topic)).size;
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#f0f4ff", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
@@ -121,9 +128,9 @@ export default async function UserDashboardPage() {
           }}
         >
           {[
-            { icon: "🎬", label: "Video Disimpan", value: "—", color: "#6366f1" },
-            { icon: "📚", label: "Topik Dipelajari", value: "—", color: "#10b981" },
-            { icon: "⭐", label: "Level Tercapai", value: "—", color: "#f59e0b" },
+            { icon: "🎬", label: "Video Disimpan", value: history.length, color: "#6366f1" },
+            { icon: "📚", label: "Topik Dipelajari", value: uniqueTopics, color: "#10b981" },
+            { icon: "⭐", label: "Level Tercapai", value: "Beginner", color: "#f59e0b" },
           ].map((stat) => (
             <div
               key={stat.label}
@@ -176,22 +183,44 @@ export default async function UserDashboardPage() {
             </a>
           </div>
 
-          {/* Placeholder kosong */}
-          <div
-            style={{
-              textAlign: "center",
-              padding: "60px 20px",
-              color: "#9ca3af",
-            }}
-          >
-            <div style={{ fontSize: "3rem", marginBottom: "12px" }}>🎬</div>
-            <p style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "4px" }}>
-              Belum ada riwayat tontonan
-            </p>
-            <p style={{ fontSize: "0.875rem" }}>
-              Simpan video dari halaman roadmap untuk melihatnya di sini.
-            </p>
-          </div>
+          {history.length === 0 ? (
+            <div
+              style={{
+                textAlign: "center",
+                padding: "60px 20px",
+                color: "#9ca3af",
+              }}
+            >
+              <div style={{ fontSize: "3rem", marginBottom: "12px" }}>🎬</div>
+              <p style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "4px" }}>
+                Belum ada riwayat tontonan
+              </p>
+              <p style={{ fontSize: "0.875rem" }}>
+                Simpan video dari halaman roadmap untuk melihatnya di sini.
+              </p>
+            </div>
+          ) : (
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+                gap: "20px",
+              }}
+            >
+              {history.map((h: any) => (
+                <div key={h._id.toString()} style={{ position: "relative" }}>
+                  <div style={{ position: "absolute", top: "10px", left: "10px", zIndex: 10, background: "rgba(0,0,0,0.7)", color: "#fff", padding: "4px 10px", borderRadius: "8px", fontSize: "0.7rem", fontWeight: 600 }}>
+                    {h.topic}
+                  </div>
+                  <VideoCard
+                    title={h.videoTitle}
+                    thumbnail={h.thumbnail}
+                    url={h.videoUrl}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </main>
     </div>

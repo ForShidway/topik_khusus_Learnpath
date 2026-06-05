@@ -56,10 +56,11 @@ export async function register(
 
     // 5. Buat session langsung
     await createSession(user._id.toString(), "user", name);
-  } catch {
+  } catch (error: any) {
+    console.error("Register Error:", error);
     return {
       errors: {
-        general: ["Terjadi kesalahan server. Coba lagi."],
+        general: [error.message || "Terjadi kesalahan server. Coba lagi."],
       },
     };
   }
@@ -125,9 +126,10 @@ export async function login(
     ) {
       throw error;
     }
+    console.error("Login Error:", error);
     return {
       errors: {
-        general: ["Terjadi kesalahan server. Coba lagi."],
+        general: [error?.message || "Terjadi kesalahan server. Coba lagi."],
       },
     };
   }
