@@ -140,8 +140,11 @@ export default function UserDashboardPage() {
           }}
         >
           <Link href="/" style={{ textDecoration: "none" }}>
-            <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#fff" }}>
-              📚 LearnPath
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <span style={{ fontSize: "1.55rem" }}>🤖</span>
+              <span style={{ fontSize: "1.35rem", fontWeight: 800, color: "#fff" }}>
+                LearnPath <span style={{ color: "#fde68a" }}>AI</span>
+              </span>
             </div>
             <div
               style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.45)", marginTop: "4px" }}
@@ -283,20 +286,30 @@ export default function UserDashboardPage() {
         {tab === "dashboard" && (
           <div>
             {/* Header */}
-            <div style={{ marginBottom: "36px" }}>
-              <h1
-                style={{
-                  fontSize: "1.8rem",
-                  fontWeight: 800,
-                  color: "#1e1b4b",
-                  marginBottom: "6px",
-                }}
-              >
-                Halo, {session?.name}! 👋
-              </h1>
-              <p style={{ color: "#6b7280", fontSize: "0.95rem" }}>
-                Lanjutkan perjalanan belajarmu hari ini.
-              </p>
+            <div style={{ marginBottom: "36px", display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: "16px" }}>
+              <div>
+                <h1
+                  style={{
+                    fontSize: "1.8rem",
+                    fontWeight: 800,
+                    color: "#1e1b4b",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Halo, {session?.name}! 👋
+                </h1>
+                <p style={{ color: "#6b7280", fontSize: "0.95rem" }}>
+                  Lanjutkan perjalanan belajarmu hari ini.
+                </p>
+              </div>
+              
+              {/* Logo on the top right */}
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", padding: "8px 16px", borderRadius: "12px", boxShadow: "0 4px 12px rgba(99,102,241,0.15)" }}>
+                <span style={{ fontSize: "1.2rem" }}>🤖</span>
+                <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "#fff" }}>
+                  LearnPath <span style={{ color: "#fde68a" }}>AI</span>
+                </span>
+              </div>
             </div>
 
             {/* Stats */}
@@ -622,20 +635,29 @@ export default function UserDashboardPage() {
                   {watchedVideos.length} video baru ditonton
                 </p>
               </div>
-              <Link
-                href="/"
-                style={{
-                  background: "linear-gradient(135deg, #667eea, #764ba2)",
-                  color: "#fff",
-                  textDecoration: "none",
-                  borderRadius: "12px",
-                  padding: "10px 24px",
-                  fontSize: "0.875rem",
-                  fontWeight: 700,
-                }}
-              >
-                + Cari Materi
-              </Link>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <Link
+                  href="/"
+                  style={{
+                    background: "linear-gradient(135deg, #667eea, #764ba2)",
+                    color: "#fff",
+                    textDecoration: "none",
+                    borderRadius: "12px",
+                    padding: "10px 24px",
+                    fontSize: "0.875rem",
+                    fontWeight: 700,
+                  }}
+                >
+                  + Cari Materi
+                </Link>
+                {/* Logo on the top right */}
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", padding: "8px 16px", borderRadius: "12px", boxShadow: "0 4px 12px rgba(99,102,241,0.15)" }}>
+                  <span style={{ fontSize: "1.2rem" }}>🤖</span>
+                  <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "#fff" }}>
+                    LearnPath <span style={{ color: "#fde68a" }}>AI</span>
+                  </span>
+                </div>
+              </div>
             </div>
 
             {watchedVideos.length === 0 ? (
@@ -743,20 +765,29 @@ export default function UserDashboardPage() {
                   {savedVideos.length} video disimpan dari {uniqueTopics} topik
                 </p>
               </div>
-              <Link
-                href="/"
-                style={{
-                  background: "linear-gradient(135deg, #667eea, #764ba2)",
-                  color: "#fff",
-                  textDecoration: "none",
-                  borderRadius: "12px",
-                  padding: "10px 24px",
-                  fontSize: "0.875rem",
-                  fontWeight: 700,
-                }}
-              >
-                + Cari Materi
-              </Link>
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <Link
+                  href="/"
+                  style={{
+                    background: "linear-gradient(135deg, #667eea, #764ba2)",
+                    color: "#fff",
+                    textDecoration: "none",
+                    borderRadius: "12px",
+                    padding: "10px 24px",
+                    fontSize: "0.875rem",
+                    fontWeight: 700,
+                  }}
+                >
+                  + Cari Materi
+                </Link>
+                {/* Logo on the top right */}
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)", padding: "8px 16px", borderRadius: "12px", boxShadow: "0 4px 12px rgba(99,102,241,0.15)" }}>
+                  <span style={{ fontSize: "1.2rem" }}>🤖</span>
+                  <span style={{ fontSize: "0.95rem", fontWeight: 800, color: "#fff" }}>
+                    LearnPath <span style={{ color: "#fde68a" }}>AI</span>
+                  </span>
+                </div>
+              </div>
             </div>
 
             {savedVideos.length === 0 ? (

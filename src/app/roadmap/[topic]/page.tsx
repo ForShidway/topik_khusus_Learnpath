@@ -257,6 +257,24 @@ export default function RoadmapPage() {
         <div style={{ position:"absolute", top:"-60px", right:"-60px", width:"280px", height:"280px", borderRadius:"50%", background:"rgba(255,255,255,0.07)", pointerEvents:"none" }} />
         <div style={{ position:"absolute", bottom:"-40px", left:"30px", width:"180px", height:"180px", borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
 
+        {/* ── Logo ── */}
+        <div
+          style={{
+            position: "absolute",
+            top: "24px",
+            right: "40px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            zIndex: 10,
+          }}
+        >
+          <span style={{ fontSize: "1.5rem" }}>🤖</span>
+          <span style={{ fontSize: "1.25rem", fontWeight: 800, color: "#fff" }}>
+            LearnPath <span style={{ color: "#fde68a" }}>AI</span>
+          </span>
+        </div>
+
         <div style={{ maxWidth: "1100px", margin: "0 auto", position: "relative", zIndex: 1 }}>
           <a
             href="/"

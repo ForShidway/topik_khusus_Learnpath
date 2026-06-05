@@ -52,6 +52,24 @@ export default function HomePage() {
         <div style={{ position:"absolute", top:"-60px", right:"-60px", width:"300px", height:"300px", borderRadius:"50%", background:"rgba(255,255,255,0.07)", pointerEvents:"none" }} />
         <div style={{ position:"absolute", bottom:"-80px", left:"-40px", width:"250px", height:"250px", borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
 
+        {/* ── Navbar Logo ── */}
+        <div
+          style={{
+            position: "absolute",
+            top: "20px",
+            left: "32px",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            zIndex: 10,
+          }}
+        >
+          <span style={{ fontSize: "1.6rem" }}>🤖</span>
+          <span style={{ fontSize: "1.25rem", fontWeight: 800, color: "#fff", fontFamily: "inherit" }}>
+            LearnPath <span style={{ color: "#fde68a" }}>AI</span>
+          </span>
+        </div>
+
         {/* ── Navbar Login/Register ── */}
         <div
           style={{
