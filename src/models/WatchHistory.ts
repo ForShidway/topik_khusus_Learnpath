@@ -8,7 +8,8 @@ export interface IWatchHistory {
   videoUrl: string;
   thumbnail: string;
   savedAt: Date;
-  lastViewedAt?: Date; // diisi saat user buka halaman video
+  lastViewedAt?: Date | null;
+  isSaved?: boolean;
 }
 
 const WatchHistorySchema = new Schema<IWatchHistory>(
@@ -44,6 +45,10 @@ const WatchHistorySchema = new Schema<IWatchHistory>(
     lastViewedAt: {
       type: Date,
       default: null,
+    },
+    isSaved: {
+      type: Boolean,
+      default: false,
     },
   },
   {

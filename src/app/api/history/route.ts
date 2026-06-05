@@ -24,7 +24,7 @@ export async function GET() {
   }
 }
 
-// ── POST /api/history — Simpan video ke riwayat ───────────────────────
+// ── POST /api/history — Simpan video ke riwayat atau catat tontonan ───────────────────────
 export async function POST(req: NextRequest) {
   try {
     const session = await getSession();
@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { topic, videoTitle, videoUrl, thumbnail } = body;
+    const { topic, videoTitle, videoUrl, thumbnail, action } = body;
 
     if (!topic || !videoTitle || !videoUrl || !thumbnail) {
       return Response.json({ error: "Data tidak lengkap" }, { status: 400 });
@@ -41,13 +41,43 @@ export async function POST(req: NextRequest) {
 
     await connectDB();
 
-    // Cek apakah video ini sudah tersimpan (cegah duplikat)
+    // 1. Jika aksinya adalah mencatat tontonan (view)
+    if (action === "view") {
+      const existing = await WatchHistory.findOne({
+        userId: session.userId,
+        videoUrl,
+      });
+
+      if (existing) {
+        existing.lastViewedAt = new Date();
+        await existing.save();
+      } else {
+        await WatchHistory.create({
+          userId: session.userId,
+          topic,
+          videoTitle,
+          videoUrl,
+          thumbnail,
+          lastViewedAt: new Date(),
+          isSaved: false, // belum disimpan ke dashboard
+        });
+      }
+      return Response.json({ success: true });
+    }
+
+    // 2. Jika aksinya adalah simpan video (save)
     const existing = await WatchHistory.findOne({
       userId: session.userId,
       videoUrl,
     });
 
     if (existing) {
+      if (!existing.isSaved) {
+        existing.isSaved = true;
+        existing.savedAt = new Date();
+        await existing.save();
+        return Response.json({ success: true, alreadySaved: false });
+      }
       return Response.json({ success: true, alreadySaved: true });
     }
 
@@ -57,10 +87,13 @@ export async function POST(req: NextRequest) {
       videoTitle,
       videoUrl,
       thumbnail,
+      isSaved: true,
+      savedAt: new Date(),
     });
 
     return Response.json({ success: true, alreadySaved: false });
-  } catch {
+  } catch (error) {
+    console.error("Error in POST /api/history:", error);
     return Response.json({ error: "Server error" }, { status: 500 });
   }
 }

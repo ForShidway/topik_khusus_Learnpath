@@ -18,16 +18,34 @@ export default function VideoPlayerPage() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    if (!videoId) return;
+
+    const url = `https://youtube.com/watch?v=${videoId}`;
+
+    // 1. Cek status tersimpan
     fetch("/api/history")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (data?.success) {
-          const url = `https://youtube.com/watch?v=${videoId}`;
-          setIsSaved(data.history.some((h: any) => h.videoUrl === url));
+          // Hanya anggap tersimpan jika isSaved tidak bernilai false
+          setIsSaved(data.history.some((h: any) => h.videoUrl === url && h.isSaved !== false));
         }
       })
       .catch(() => {});
-  }, [videoId]);
+
+    // 2. Catat tontonan (view) secara otomatis
+    fetch("/api/history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        topic,
+        videoTitle: title,
+        videoUrl: url,
+        thumbnail,
+        action: "view",
+      }),
+    }).catch(() => {});
+  }, [videoId, topic, title, thumbnail]);
 
   const handleSave = async () => {
     setSaving(true);

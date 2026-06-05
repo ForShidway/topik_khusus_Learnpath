@@ -5,7 +5,7 @@ import { logout } from "@/src/app/actions/auth";
 import Link from "next/link";
 import VideoCard from "@/src/components/VideoCard";
 
-type Tab = "dashboard" | "history";
+type Tab = "dashboard" | "watched" | "saved";
 
 interface SessionInfo {
   name: string;
@@ -20,6 +20,8 @@ interface HistoryItem {
   videoUrl: string;
   thumbnail: string;
   savedAt: string;
+  lastViewedAt?: string | null;
+  isSaved?: boolean;
 }
 
 function getVideoId(url: string) {
@@ -57,7 +59,16 @@ export default function UserDashboardPage() {
     }, 180);
   };
 
-  const uniqueTopics = new Set(history.map((h) => h.topic)).size;
+  const savedVideos = history.filter((h) => h.isSaved !== false);
+  const watchedVideos = history
+    .filter((h) => !!h.lastViewedAt)
+    .sort((a, b) => {
+      const timeA = a.lastViewedAt ? new Date(a.lastViewedAt).getTime() : 0;
+      const timeB = b.lastViewedAt ? new Date(b.lastViewedAt).getTime() : 0;
+      return timeB - timeA;
+    });
+
+  const uniqueTopics = new Set(savedVideos.map((h) => h.topic)).size;
 
   /* ─── Loading ─────────────────────────────────── */
   if (loading) {
@@ -93,7 +104,8 @@ export default function UserDashboardPage() {
 
   const navItems: { icon: string; label: string; key: Tab }[] = [
     { icon: "📊", label: "Dashboard", key: "dashboard" },
-    { icon: "🎬", label: "Riwayat Tontonan", key: "history" },
+    { icon: "🎬", label: "Riwayat Tontonan", key: "watched" },
+    { icon: "💾", label: "Video Disimpan", key: "saved" },
   ];
 
   /* ─── Layout ────────────────────────────────────── */
@@ -300,7 +312,7 @@ export default function UserDashboardPage() {
                 {
                   icon: "🎬",
                   label: "Video Disimpan",
-                  value: history.length,
+                  value: savedVideos.length,
                   color: "#6366f1",
                   bg: "#eef2ff",
                 },
@@ -412,7 +424,7 @@ export default function UserDashboardPage() {
             </div>
 
             {/* Preview 3 video terakhir */}
-            {history.length > 0 && (
+            {watchedVideos.length > 0 && (
               <div
                 style={{
                   background: "#fff",
@@ -439,7 +451,7 @@ export default function UserDashboardPage() {
                     🎬 Baru Ditonton
                   </h2>
                   <button
-                    onClick={() => switchTab("history")}
+                    onClick={() => switchTab("watched")}
                     style={{
                       background: "none",
                       border: "none",
@@ -460,7 +472,7 @@ export default function UserDashboardPage() {
                     gap: "16px",
                   }}
                 >
-                  {history.slice(0, 3).map((h) => (
+                  {watchedVideos.slice(0, 3).map((h) => (
                     <div key={h._id} style={{ position: "relative" }}>
                       <div
                         style={{
@@ -491,8 +503,8 @@ export default function UserDashboardPage() {
               </div>
             )}
 
-            {/* Video Tersimpan — full grid */}
-            {history.length > 0 && (
+            {/* Video Tersimpan — 3 items only */}
+            {savedVideos.length > 0 && (
               <div
                 style={{
                   background: "#fff",
@@ -522,11 +534,11 @@ export default function UserDashboardPage() {
                       💾 Video Tersimpan
                     </h2>
                     <p style={{ color: "#9ca3af", fontSize: "0.8rem" }}>
-                      {history.length} video • {uniqueTopics} topik
+                      {savedVideos.length} video • {uniqueTopics} topik
                     </p>
                   </div>
                   <button
-                    onClick={() => switchTab("history")}
+                    onClick={() => switchTab("saved")}
                     style={{
                       background: "linear-gradient(135deg, #667eea, #764ba2)",
                       color: "#fff",
@@ -549,7 +561,7 @@ export default function UserDashboardPage() {
                     gap: "16px",
                   }}
                 >
-                  {history.map((h) => (
+                  {savedVideos.slice(0, 3).map((h) => (
                     <div key={h._id} style={{ position: "relative" }}>
                       <div
                         style={{
@@ -583,7 +595,7 @@ export default function UserDashboardPage() {
         )}
 
         {/* ── TAB: Riwayat Tontonan ── */}
-        {tab === "history" && (
+        {tab === "watched" && (
           <div>
             <div
               style={{
@@ -607,8 +619,7 @@ export default function UserDashboardPage() {
                   🎬 Riwayat Tontonan
                 </h1>
                 <p style={{ color: "#6b7280", fontSize: "0.95rem" }}>
-                  {history.length} video tersimpan dari{" "}
-                  {uniqueTopics} topik
+                  {watchedVideos.length} video baru ditonton
                 </p>
               </div>
               <Link
@@ -627,7 +638,7 @@ export default function UserDashboardPage() {
               </Link>
             </div>
 
-            {history.length === 0 ? (
+            {watchedVideos.length === 0 ? (
               <div
                 style={{
                   background: "#fff",
@@ -651,7 +662,7 @@ export default function UserDashboardPage() {
                   Belum ada riwayat tontonan
                 </p>
                 <p style={{ fontSize: "0.875rem", color: "#9ca3af" }}>
-                  Simpan video dari halaman roadmap untuk melihatnya di sini.
+                  Tonton video dari halaman roadmap untuk melihatnya di sini.
                 </p>
               </div>
             ) : (
@@ -671,7 +682,128 @@ export default function UserDashboardPage() {
                     gap: "20px",
                   }}
                 >
-                  {history.map((h) => (
+                  {watchedVideos.map((h) => (
+                    <div key={h._id} style={{ position: "relative" }}>
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "8px",
+                          left: "8px",
+                          zIndex: 10,
+                          background: "rgba(0,0,0,0.65)",
+                          color: "#fff",
+                          padding: "3px 10px",
+                          borderRadius: "6px",
+                          fontSize: "0.7rem",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {h.topic}
+                      </div>
+                      <VideoCard
+                        title={h.videoTitle}
+                        thumbnail={h.thumbnail}
+                        url={h.videoUrl}
+                        videoId={getVideoId(h.videoUrl)}
+                        topic={h.topic}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── TAB: Video Disimpan ── */}
+        {tab === "saved" && (
+          <div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "32px",
+                flexWrap: "wrap",
+                gap: "12px",
+              }}
+            >
+              <div>
+                <h1
+                  style={{
+                    fontSize: "1.8rem",
+                    fontWeight: 800,
+                    color: "#1e1b4b",
+                    marginBottom: "6px",
+                  }}
+                >
+                  💾 Video Disimpan
+                </h1>
+                <p style={{ color: "#6b7280", fontSize: "0.95rem" }}>
+                  {savedVideos.length} video disimpan dari {uniqueTopics} topik
+                </p>
+              </div>
+              <Link
+                href="/"
+                style={{
+                  background: "linear-gradient(135deg, #667eea, #764ba2)",
+                  color: "#fff",
+                  textDecoration: "none",
+                  borderRadius: "12px",
+                  padding: "10px 24px",
+                  fontSize: "0.875rem",
+                  fontWeight: 700,
+                }}
+              >
+                + Cari Materi
+              </Link>
+            </div>
+
+            {savedVideos.length === 0 ? (
+              <div
+                style={{
+                  background: "#fff",
+                  borderRadius: "24px",
+                  padding: "80px 40px",
+                  textAlign: "center",
+                  boxShadow: "0 4px 24px rgba(99,102,241,0.08)",
+                }}
+              >
+                <div style={{ fontSize: "3.5rem", marginBottom: "14px" }}>
+                  💾
+                </div>
+                <p
+                  style={{
+                    fontSize: "1rem",
+                    fontWeight: 700,
+                    color: "#374151",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Belum ada video disimpan
+                </p>
+                <p style={{ fontSize: "0.875rem", color: "#9ca3af" }}>
+                  Simpan video dari halaman roadmap atau video player untuk melihatnya di sini.
+                </p>
+              </div>
+            ) : (
+              <div
+                style={{
+                  background: "#fff",
+                  borderRadius: "24px",
+                  padding: "28px 32px",
+                  boxShadow: "0 4px 24px rgba(99,102,241,0.08)",
+                }}
+              >
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(250px, 1fr))",
+                    gap: "20px",
+                  }}
+                >
+                  {savedVideos.map((h) => (
                     <div key={h._id} style={{ position: "relative" }}>
                       <div
                         style={{
