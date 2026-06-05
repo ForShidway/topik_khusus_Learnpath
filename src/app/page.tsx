@@ -52,6 +52,52 @@ export default function HomePage() {
         <div style={{ position:"absolute", top:"-60px", right:"-60px", width:"300px", height:"300px", borderRadius:"50%", background:"rgba(255,255,255,0.07)", pointerEvents:"none" }} />
         <div style={{ position:"absolute", bottom:"-80px", left:"-40px", width:"250px", height:"250px", borderRadius:"50%", background:"rgba(255,255,255,0.05)", pointerEvents:"none" }} />
 
+        {/* ── Navbar Login/Register ── */}
+        <div
+          style={{
+            position: "absolute",
+            top: "20px",
+            right: "32px",
+            display: "flex",
+            gap: "10px",
+            zIndex: 10,
+          }}
+        >
+          <a
+            href="/login"
+            style={{
+              background: "rgba(255,255,255,0.15)",
+              border: "1px solid rgba(255,255,255,0.35)",
+              color: "#fff",
+              borderRadius: "10px",
+              padding: "8px 20px",
+              fontSize: "0.85rem",
+              fontWeight: 600,
+              textDecoration: "none",
+              backdropFilter: "blur(8px)",
+              transition: "background 0.2s",
+            }}
+          >
+            Masuk
+          </a>
+          <a
+            href="/register"
+            style={{
+              background: "#fff",
+              color: "#6366f1",
+              borderRadius: "10px",
+              padding: "8px 20px",
+              fontSize: "0.85rem",
+              fontWeight: 700,
+              textDecoration: "none",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
+              transition: "transform 0.2s",
+            }}
+          >
+            Daftar Gratis ✨
+          </a>
+        </div>
+
         <div style={{ position: "relative", zIndex: 1, maxWidth: "680px", margin: "0 auto" }}>
           {/* Badge */}
           <span style={{ display:"inline-block", background:"rgba(255,255,255,0.18)", border:"1px solid rgba(255,255,255,0.35)", color:"#fff", borderRadius:"999px", padding:"6px 20px", fontSize:"13px", fontWeight:600, letterSpacing:"0.08em", marginBottom:"24px", backdropFilter:"blur(8px)" }}>
