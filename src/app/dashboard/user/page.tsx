@@ -551,7 +551,7 @@ export default function UserDashboardPage() {
                       fontFamily: "inherit",
                     }}
                   >
-                    Kelola Riwayat →
+                    Lihat Riwayat →
                   </button>
                 </div>
                 <div

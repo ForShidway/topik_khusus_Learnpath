@@ -1,4 +1,6 @@
 import { model } from "@/src/lib/gemini";
+import { connectDB } from "@/src/lib/mongodb";
+import SearchLog from "@/src/models/SearchLog";
 
 export async function POST(req: Request) {
   try {
@@ -6,6 +8,18 @@ export async function POST(req: Request) {
 
     const topic = body.topic;
     const level = body.level;
+
+    // Log the search query in the database
+    try {
+      await connectDB();
+      if (topic) {
+        // Pretty-print topic if it's a slug
+        const queryText = topic.replaceAll("-", " ").replace(/\b\w/g, (c: string) => c.toUpperCase());
+        await SearchLog.create({ query: queryText });
+      }
+    } catch (dbErr) {
+      console.error("Failed to log search to DB:", dbErr);
+    }
 
     const prompt = `
 Anda adalah AI Learning Roadmap Generator.
