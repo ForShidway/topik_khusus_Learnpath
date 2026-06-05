@@ -376,6 +376,8 @@ export default function RoadmapPage() {
                           title={video.snippet.title}
                           thumbnail={video.snippet.thumbnails.high.url}
                           url={videoUrl}
+                          videoId={video.id.videoId}
+                          topic={topic}
                           onSave={() => handleSave(video)}
                           isSaved={isSaved}
                         />

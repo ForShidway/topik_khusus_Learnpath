@@ -4,16 +4,25 @@ interface Props {
   title: string;
   thumbnail: string;
   url: string;
+  videoId?: string;   // jika ada → link ke /video/[videoId]
+  topic?: string;     // diteruskan ke halaman video sebagai query param
   onSave?: (e: React.MouseEvent) => void;
   isSaved?: boolean;
 }
 
-export default function VideoCard({ title, thumbnail, url, onSave, isSaved }: Props) {
+export default function VideoCard({ title, thumbnail, url, videoId, topic, onSave, isSaved }: Props) {
+  // Jika ada videoId, arahkan ke halaman internal; jika tidak, buka YouTube
+  const href = videoId
+    ? `/video/${videoId}?title=${encodeURIComponent(title)}&topic=${encodeURIComponent(topic || "")}`
+    : url;
+
+  const isInternal = !!videoId;
+
   return (
     <a
-      href={url}
-      target="_blank"
-      rel="noopener noreferrer"
+      href={href}
+      target={isInternal ? "_self" : "_blank"}
+      rel={isInternal ? undefined : "noopener noreferrer"}
       style={{
         display: "block",
         borderRadius: "18px",
@@ -112,7 +121,7 @@ export default function VideoCard({ title, thumbnail, url, onSave, isSaved }: Pr
               borderRadius: "999px",
             }}
           >
-            ▶ Tonton
+            ▶ {isInternal ? "Tonton" : "YouTube"}
           </span>
 
           {onSave && (

@@ -1,21 +1,112 @@
-import { getSession } from "@/src/lib/session";
+"use client";
+
+import { useEffect, useState } from "react";
 import { logout } from "@/src/app/actions/auth";
-import { redirect } from "next/navigation";
-import { connectDB } from "@/src/lib/mongodb";
-import WatchHistory from "@/src/models/WatchHistory";
+import Link from "next/link";
 import VideoCard from "@/src/components/VideoCard";
 
-export default async function UserDashboardPage() {
-  const session = await getSession();
-  if (!session) redirect("/login");
+type Tab = "dashboard" | "history";
 
-  await connectDB();
-  const history = await WatchHistory.find({ userId: session.userId }).sort({ savedAt: -1 }).lean();
-  const uniqueTopics = new Set(history.map(h => h.topic)).size;
+interface SessionInfo {
+  name: string;
+  role: string;
+  userId: string;
+}
 
+interface HistoryItem {
+  _id: string;
+  topic: string;
+  videoTitle: string;
+  videoUrl: string;
+  thumbnail: string;
+  savedAt: string;
+}
+
+function getVideoId(url: string) {
+  return url.split("v=")[1]?.split("&")[0] || "";
+}
+
+export default function UserDashboardPage() {
+  const [tab, setTab] = useState<Tab>("dashboard");
+  const [session, setSession] = useState<SessionInfo | null>(null);
+  const [history, setHistory] = useState<HistoryItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [fading, setFading] = useState(false);
+
+  useEffect(() => {
+    Promise.all([
+      fetch("/api/me").then((r) => (r.ok ? r.json() : null)),
+      fetch("/api/history").then((r) => (r.ok ? r.json() : null)),
+    ]).then(([me, hist]) => {
+      if (!me) {
+        window.location.href = "/login";
+        return;
+      }
+      setSession(me);
+      if (hist?.success) setHistory(hist.history);
+      setLoading(false);
+    });
+  }, []);
+
+  const switchTab = (next: Tab) => {
+    if (next === tab) return;
+    setFading(true);
+    setTimeout(() => {
+      setTab(next);
+      setFading(false);
+    }, 180);
+  };
+
+  const uniqueTopics = new Set(history.map((h) => h.topic)).size;
+
+  /* ─── Loading ─────────────────────────────────── */
+  if (loading) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          background: "#f0f4ff",
+          fontFamily: "'Plus Jakarta Sans', sans-serif",
+        }}
+      >
+        <div style={{ textAlign: "center" }}>
+          <div
+            style={{
+              width: "48px",
+              height: "48px",
+              border: "4px solid #e5e7eb",
+              borderTop: "4px solid #6366f1",
+              borderRadius: "50%",
+              animation: "spin 0.9s linear infinite",
+              margin: "0 auto 16px",
+            }}
+          />
+          <p style={{ color: "#6b7280", fontSize: "0.95rem" }}>Memuat dashboard…</p>
+        </div>
+        <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
+  const navItems: { icon: string; label: string; key: Tab }[] = [
+    { icon: "📊", label: "Dashboard", key: "dashboard" },
+    { icon: "🎬", label: "Riwayat Tontonan", key: "history" },
+  ];
+
+  /* ─── Layout ────────────────────────────────────── */
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#f0f4ff", fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
-      {/* ── Sidebar ── */}
+    <div
+      style={{
+        display: "flex",
+        minHeight: "100vh",
+        background: "#f0f4ff",
+        fontFamily: "'Plus Jakarta Sans', sans-serif",
+      }}
+    >
+      {/* ══ Sidebar ══════════════════════════════════ */}
       <aside
         style={{
           width: "260px",
@@ -24,68 +115,121 @@ export default async function UserDashboardPage() {
           display: "flex",
           flexDirection: "column",
           flexShrink: 0,
+          position: "sticky",
+          top: 0,
+          height: "100vh",
         }}
       >
         {/* Logo */}
-        <div style={{ padding: "0 28px 32px", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-          <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#fff" }}>
-            📚 LearnPath
-          </div>
-          <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.5)", marginTop: "4px" }}>
-            AI Learning Platform
-          </div>
+        <div
+          style={{
+            padding: "0 28px 32px",
+            borderBottom: "1px solid rgba(255,255,255,0.1)",
+          }}
+        >
+          <Link href="/" style={{ textDecoration: "none" }}>
+            <div style={{ fontSize: "1.5rem", fontWeight: 800, color: "#fff" }}>
+              📚 LearnPath
+            </div>
+            <div
+              style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.45)", marginTop: "4px" }}
+            >
+              AI Learning Platform
+            </div>
+          </Link>
         </div>
 
-        {/* Nav */}
+        {/* Nav Tabs */}
         <nav style={{ flex: 1, padding: "24px 16px" }}>
-          {[
-            { icon: "🏠", label: "Beranda", href: "/" },
-            { icon: "📖", label: "Dashboard", href: "/dashboard/user", active: true },
-            { icon: "🎬", label: "Riwayat Tontonan", href: "/dashboard/user#history" },
-          ].map((item) => (
-            <a
-              key={item.label}
-              href={item.href}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "12px",
-                padding: "12px 16px",
-                borderRadius: "12px",
-                color: item.active ? "#fff" : "rgba(255,255,255,0.6)",
-                background: item.active ? "rgba(99,102,241,0.35)" : "transparent",
-                textDecoration: "none",
-                fontSize: "0.9rem",
-                fontWeight: item.active ? 600 : 400,
-                marginBottom: "4px",
-                transition: "all 0.2s",
-              }}
-            >
-              <span>{item.icon}</span>
-              {item.label}
-            </a>
-          ))}
+          {navItems.map((item) => {
+            const active = tab === item.key;
+            return (
+              <button
+                key={item.key}
+                onClick={() => switchTab(item.key)}
+                style={{
+                  display: "flex",
+                  width: "100%",
+                  alignItems: "center",
+                  gap: "12px",
+                  padding: "12px 16px",
+                  borderRadius: "12px",
+                  color: active ? "#fff" : "rgba(255,255,255,0.55)",
+                  background: active
+                    ? "rgba(99,102,241,0.35)"
+                    : "transparent",
+                  border: active
+                    ? "1px solid rgba(99,102,241,0.4)"
+                    : "1px solid transparent",
+                  fontSize: "0.9rem",
+                  fontWeight: active ? 700 : 400,
+                  marginBottom: "6px",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  textAlign: "left",
+                  transition:
+                    "background 0.2s ease, color 0.2s ease, border 0.2s ease",
+                }}
+              >
+                <span style={{ fontSize: "1.1rem" }}>{item.icon}</span>
+                <span style={{ flex: 1 }}>{item.label}</span>
+                {active && (
+                  <span
+                    style={{
+                      width: "7px",
+                      height: "7px",
+                      borderRadius: "50%",
+                      background: "#818cf8",
+                      flexShrink: 0,
+                    }}
+                  />
+                )}
+              </button>
+            );
+          })}
         </nav>
 
         {/* User info + Logout */}
-        <div style={{ padding: "20px 24px", borderTop: "1px solid rgba(255,255,255,0.1)" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
+        <div
+          style={{
+            padding: "20px 24px",
+            borderTop: "1px solid rgba(255,255,255,0.1)",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              marginBottom: "16px",
+            }}
+          >
             <div
               style={{
-                width: "40px", height: "40px", borderRadius: "50%",
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
                 background: "linear-gradient(135deg, #667eea, #764ba2)",
-                display: "flex", alignItems: "center", justifyContent: "center",
-                fontSize: "1.1rem", fontWeight: 700, color: "#fff",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "1.1rem",
+                fontWeight: 700,
+                color: "#fff",
                 flexShrink: 0,
               }}
             >
-              {session.name.charAt(0).toUpperCase()}
+              {session?.name.charAt(0).toUpperCase()}
             </div>
             <div>
-              <div style={{ color: "#fff", fontSize: "0.875rem", fontWeight: 600 }}>
-                {session.name}
+              <div
+                style={{ color: "#fff", fontSize: "0.875rem", fontWeight: 600 }}
+              >
+                {session?.name}
               </div>
-              <div style={{ color: "rgba(255,255,255,0.5)", fontSize: "0.75rem" }}>
+              <div
+                style={{ color: "rgba(255,255,255,0.45)", fontSize: "0.75rem" }}
+              >
                 Member
               </div>
             </div>
@@ -94,10 +238,16 @@ export default async function UserDashboardPage() {
             <button
               type="submit"
               style={{
-                width: "100%", padding: "10px", borderRadius: "10px",
-                background: "rgba(239,68,68,0.2)", border: "1px solid rgba(239,68,68,0.3)",
-                color: "#fca5a5", fontSize: "0.875rem", fontWeight: 600,
-                cursor: "pointer", fontFamily: "inherit",
+                width: "100%",
+                padding: "10px",
+                borderRadius: "10px",
+                background: "rgba(239,68,68,0.18)",
+                border: "1px solid rgba(239,68,68,0.3)",
+                color: "#fca5a5",
+                fontSize: "0.875rem",
+                fontWeight: 600,
+                cursor: "pointer",
+                fontFamily: "inherit",
               }}
             >
               🚪 Keluar
@@ -106,123 +256,458 @@ export default async function UserDashboardPage() {
         </div>
       </aside>
 
-      {/* ── Main Content ── */}
-      <main style={{ flex: 1, padding: "40px", overflowY: "auto" }}>
-        {/* Header */}
-        <div style={{ marginBottom: "36px" }}>
-          <h1 style={{ fontSize: "1.8rem", fontWeight: 800, color: "#1e1b4b", marginBottom: "6px" }}>
-            Halo, {session.name}! 👋
-          </h1>
-          <p style={{ color: "#6b7280", fontSize: "0.95rem" }}>
-            Lanjutkan perjalanan belajarmu hari ini.
-          </p>
-        </div>
-
-        {/* Stats Cards */}
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-            gap: "20px",
-            marginBottom: "40px",
-          }}
-        >
-          {[
-            { icon: "🎬", label: "Video Disimpan", value: history.length, color: "#6366f1" },
-            { icon: "📚", label: "Topik Dipelajari", value: uniqueTopics, color: "#10b981" },
-            { icon: "⭐", label: "Level Tercapai", value: "Beginner", color: "#f59e0b" },
-          ].map((stat) => (
-            <div
-              key={stat.label}
-              style={{
-                background: "#fff",
-                borderRadius: "20px",
-                padding: "24px",
-                boxShadow: "0 4px 20px rgba(99,102,241,0.08)",
-                border: "1px solid rgba(99,102,241,0.08)",
-              }}
-            >
-              <div style={{ fontSize: "1.8rem", marginBottom: "8px" }}>{stat.icon}</div>
-              <div style={{ fontSize: "1.8rem", fontWeight: 800, color: stat.color }}>
-                {stat.value}
-              </div>
-              <div style={{ fontSize: "0.82rem", color: "#6b7280", marginTop: "4px" }}>
-                {stat.label}
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Riwayat Section */}
-        <div
-          id="history"
-          style={{
-            background: "#fff",
-            borderRadius: "24px",
-            padding: "32px",
-            boxShadow: "0 4px 24px rgba(99,102,241,0.08)",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "24px" }}>
-            <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: "#1e1b4b" }}>
-              🎬 Riwayat Tontonan
-            </h2>
-            <a
-              href="/"
-              style={{
-                background: "linear-gradient(135deg, #667eea, #764ba2)",
-                color: "#fff",
-                textDecoration: "none",
-                borderRadius: "10px",
-                padding: "8px 20px",
-                fontSize: "0.82rem",
-                fontWeight: 600,
-              }}
-            >
-              + Cari Materi
-            </a>
-          </div>
-
-          {history.length === 0 ? (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "60px 20px",
-                color: "#9ca3af",
-              }}
-            >
-              <div style={{ fontSize: "3rem", marginBottom: "12px" }}>🎬</div>
-              <p style={{ fontSize: "1rem", fontWeight: 600, marginBottom: "4px" }}>
-                Belum ada riwayat tontonan
-              </p>
-              <p style={{ fontSize: "0.875rem" }}>
-                Simpan video dari halaman roadmap untuk melihatnya di sini.
+      {/* ══ Main Content ══════════════════════════════ */}
+      <main
+        style={{
+          flex: 1,
+          padding: "40px",
+          overflowY: "auto",
+          opacity: fading ? 0 : 1,
+          transform: fading ? "translateY(10px)" : "translateY(0)",
+          transition: "opacity 0.18s ease, transform 0.18s ease",
+        }}
+      >
+        {/* ── TAB: Dashboard ── */}
+        {tab === "dashboard" && (
+          <div>
+            {/* Header */}
+            <div style={{ marginBottom: "36px" }}>
+              <h1
+                style={{
+                  fontSize: "1.8rem",
+                  fontWeight: 800,
+                  color: "#1e1b4b",
+                  marginBottom: "6px",
+                }}
+              >
+                Halo, {session?.name}! 👋
+              </h1>
+              <p style={{ color: "#6b7280", fontSize: "0.95rem" }}>
+                Lanjutkan perjalanan belajarmu hari ini.
               </p>
             </div>
-          ) : (
+
+            {/* Stats */}
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(250px, 1fr))",
+                gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
                 gap: "20px",
+                marginBottom: "32px",
               }}
             >
-              {history.map((h: any) => (
-                <div key={h._id.toString()} style={{ position: "relative" }}>
-                  <div style={{ position: "absolute", top: "10px", left: "10px", zIndex: 10, background: "rgba(0,0,0,0.7)", color: "#fff", padding: "4px 10px", borderRadius: "8px", fontSize: "0.7rem", fontWeight: 600 }}>
-                    {h.topic}
+              {[
+                {
+                  icon: "🎬",
+                  label: "Video Disimpan",
+                  value: history.length,
+                  color: "#6366f1",
+                  bg: "#eef2ff",
+                },
+                {
+                  icon: "📚",
+                  label: "Topik Dipelajari",
+                  value: uniqueTopics,
+                  color: "#10b981",
+                  bg: "#ecfdf5",
+                },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  style={{
+                    background: "#fff",
+                    borderRadius: "20px",
+                    padding: "24px",
+                    boxShadow: "0 4px 20px rgba(99,102,241,0.08)",
+                    border: "1px solid rgba(99,102,241,0.08)",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "44px",
+                      height: "44px",
+                      borderRadius: "12px",
+                      background: stat.bg,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "1.4rem",
+                      marginBottom: "12px",
+                    }}
+                  >
+                    {stat.icon}
                   </div>
-                  <VideoCard
-                    title={h.videoTitle}
-                    thumbnail={h.thumbnail}
-                    url={h.videoUrl}
-                  />
+                  <div
+                    style={{
+                      fontSize: "1.8rem",
+                      fontWeight: 800,
+                      color: stat.color,
+                    }}
+                  >
+                    {stat.value}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "0.82rem",
+                      color: "#6b7280",
+                      marginTop: "4px",
+                    }}
+                  >
+                    {stat.label}
+                  </div>
                 </div>
               ))}
             </div>
-          )}
-        </div>
+
+            {/* CTA Banner */}
+            <div
+              style={{
+                background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+                borderRadius: "24px",
+                padding: "28px 32px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: "16px",
+                marginBottom: "32px",
+              }}
+            >
+              <div>
+                <h2
+                  style={{
+                    fontSize: "1.2rem",
+                    fontWeight: 800,
+                    color: "#fff",
+                    marginBottom: "6px",
+                  }}
+                >
+                  🚀 Siap belajar hari ini?
+                </h2>
+                <p
+                  style={{
+                    fontSize: "0.875rem",
+                    color: "rgba(255,255,255,0.8)",
+                  }}
+                >
+                  Temukan roadmap belajar AI yang dipersonalisasi untukmu.
+                </p>
+              </div>
+              <Link
+                href="/"
+                style={{
+                  background: "#fff",
+                  color: "#6366f1",
+                  borderRadius: "14px",
+                  padding: "12px 28px",
+                  fontWeight: 700,
+                  textDecoration: "none",
+                  fontSize: "0.9rem",
+                  whiteSpace: "nowrap",
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
+                }}
+              >
+                Cari Materi →
+              </Link>
+            </div>
+
+            {/* Preview 3 video terakhir */}
+            {history.length > 0 && (
+              <div
+                style={{
+                  background: "#fff",
+                  borderRadius: "24px",
+                  padding: "28px 32px",
+                  boxShadow: "0 4px 24px rgba(99,102,241,0.08)",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: "20px",
+                  }}
+                >
+                  <h2
+                    style={{
+                      fontSize: "1.1rem",
+                      fontWeight: 800,
+                      color: "#1e1b4b",
+                    }}
+                  >
+                    🎬 Baru Ditonton
+                  </h2>
+                  <button
+                    onClick={() => switchTab("history")}
+                    style={{
+                      background: "none",
+                      border: "none",
+                      color: "#6366f1",
+                      fontWeight: 700,
+                      fontSize: "0.85rem",
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    Lihat Semua →
+                  </button>
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
+                    gap: "16px",
+                  }}
+                >
+                  {history.slice(0, 3).map((h) => (
+                    <div key={h._id} style={{ position: "relative" }}>
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "8px",
+                          left: "8px",
+                          zIndex: 10,
+                          background: "rgba(0,0,0,0.65)",
+                          color: "#fff",
+                          padding: "3px 10px",
+                          borderRadius: "6px",
+                          fontSize: "0.7rem",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {h.topic}
+                      </div>
+                      <VideoCard
+                        title={h.videoTitle}
+                        thumbnail={h.thumbnail}
+                        url={h.videoUrl}
+                        videoId={getVideoId(h.videoUrl)}
+                        topic={h.topic}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Video Tersimpan — full grid */}
+            {history.length > 0 && (
+              <div
+                style={{
+                  background: "#fff",
+                  borderRadius: "24px",
+                  padding: "28px 32px",
+                  boxShadow: "0 4px 24px rgba(99,102,241,0.08)",
+                  marginTop: "24px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    marginBottom: "20px",
+                  }}
+                >
+                  <div>
+                    <h2
+                      style={{
+                        fontSize: "1.1rem",
+                        fontWeight: 800,
+                        color: "#1e1b4b",
+                        marginBottom: "4px",
+                      }}
+                    >
+                      💾 Video Tersimpan
+                    </h2>
+                    <p style={{ color: "#9ca3af", fontSize: "0.8rem" }}>
+                      {history.length} video • {uniqueTopics} topik
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => switchTab("history")}
+                    style={{
+                      background: "linear-gradient(135deg, #667eea, #764ba2)",
+                      color: "#fff",
+                      border: "none",
+                      borderRadius: "10px",
+                      padding: "8px 20px",
+                      fontWeight: 700,
+                      fontSize: "0.82rem",
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                    }}
+                  >
+                    Kelola Riwayat →
+                  </button>
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(230px, 1fr))",
+                    gap: "16px",
+                  }}
+                >
+                  {history.map((h) => (
+                    <div key={h._id} style={{ position: "relative" }}>
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "8px",
+                          left: "8px",
+                          zIndex: 10,
+                          background: "rgba(0,0,0,0.65)",
+                          color: "#fff",
+                          padding: "3px 10px",
+                          borderRadius: "6px",
+                          fontSize: "0.7rem",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {h.topic}
+                      </div>
+                      <VideoCard
+                        title={h.videoTitle}
+                        thumbnail={h.thumbnail}
+                        url={h.videoUrl}
+                        videoId={getVideoId(h.videoUrl)}
+                        topic={h.topic}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── TAB: Riwayat Tontonan ── */}
+        {tab === "history" && (
+          <div>
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                marginBottom: "32px",
+                flexWrap: "wrap",
+                gap: "12px",
+              }}
+            >
+              <div>
+                <h1
+                  style={{
+                    fontSize: "1.8rem",
+                    fontWeight: 800,
+                    color: "#1e1b4b",
+                    marginBottom: "6px",
+                  }}
+                >
+                  🎬 Riwayat Tontonan
+                </h1>
+                <p style={{ color: "#6b7280", fontSize: "0.95rem" }}>
+                  {history.length} video tersimpan dari{" "}
+                  {uniqueTopics} topik
+                </p>
+              </div>
+              <Link
+                href="/"
+                style={{
+                  background: "linear-gradient(135deg, #667eea, #764ba2)",
+                  color: "#fff",
+                  textDecoration: "none",
+                  borderRadius: "12px",
+                  padding: "10px 24px",
+                  fontSize: "0.875rem",
+                  fontWeight: 700,
+                }}
+              >
+                + Cari Materi
+              </Link>
+            </div>
+
+            {history.length === 0 ? (
+              <div
+                style={{
+                  background: "#fff",
+                  borderRadius: "24px",
+                  padding: "80px 40px",
+                  textAlign: "center",
+                  boxShadow: "0 4px 24px rgba(99,102,241,0.08)",
+                }}
+              >
+                <div style={{ fontSize: "3.5rem", marginBottom: "14px" }}>
+                  🎬
+                </div>
+                <p
+                  style={{
+                    fontSize: "1rem",
+                    fontWeight: 700,
+                    color: "#374151",
+                    marginBottom: "6px",
+                  }}
+                >
+                  Belum ada riwayat tontonan
+                </p>
+                <p style={{ fontSize: "0.875rem", color: "#9ca3af" }}>
+                  Simpan video dari halaman roadmap untuk melihatnya di sini.
+                </p>
+              </div>
+            ) : (
+              <div
+                style={{
+                  background: "#fff",
+                  borderRadius: "24px",
+                  padding: "28px 32px",
+                  boxShadow: "0 4px 24px rgba(99,102,241,0.08)",
+                }}
+              >
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns:
+                      "repeat(auto-fill, minmax(250px, 1fr))",
+                    gap: "20px",
+                  }}
+                >
+                  {history.map((h) => (
+                    <div key={h._id} style={{ position: "relative" }}>
+                      <div
+                        style={{
+                          position: "absolute",
+                          top: "8px",
+                          left: "8px",
+                          zIndex: 10,
+                          background: "rgba(0,0,0,0.65)",
+                          color: "#fff",
+                          padding: "3px 10px",
+                          borderRadius: "6px",
+                          fontSize: "0.7rem",
+                          fontWeight: 600,
+                        }}
+                      >
+                        {h.topic}
+                      </div>
+                      <VideoCard
+                        title={h.videoTitle}
+                        thumbnail={h.thumbnail}
+                        url={h.videoUrl}
+                        videoId={getVideoId(h.videoUrl)}
+                        topic={h.topic}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </main>
+
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+      `}</style>
     </div>
   );
 }
