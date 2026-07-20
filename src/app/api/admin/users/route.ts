@@ -3,6 +3,8 @@ import { getSession } from "@/src/lib/session";
 import { connectDB } from "@/src/lib/mongodb";
 import User from "@/src/models/User";
 import bcrypt from "bcryptjs";
+import { invalidateCache } from "@/src/lib/redis";
+import { ADMIN_STATS_CACHE_KEY } from "@/src/app/api/admin/stats/route";
 
 // GET /api/admin/users — Ambil daftar user terpaginasi
 export async function GET(req: NextRequest) {
@@ -91,6 +93,9 @@ export async function PUT(req: NextRequest) {
       return Response.json({ error: "User tidak ditemukan" }, { status: 404 });
     }
 
+    // Invalidasi cache stats setelah data user berubah
+    await invalidateCache(ADMIN_STATS_CACHE_KEY);
+
     return Response.json({ success: true, user: { id: updatedUser._id, name: updatedUser.name, email: updatedUser.email, role: updatedUser.role } });
   } catch (error) {
     console.error("Error in PUT /api/admin/users:", error);
@@ -127,6 +132,9 @@ export async function DELETE(req: NextRequest) {
     if (!deleted) {
       return Response.json({ error: "User tidak ditemukan" }, { status: 404 });
     }
+
+    // Invalidasi cache stats setelah user dihapus
+    await invalidateCache(ADMIN_STATS_CACHE_KEY);
 
     return Response.json({ success: true });
   } catch (error) {

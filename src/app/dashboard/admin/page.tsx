@@ -555,10 +555,10 @@ export default function AdminDashboardPage() {
                             display: "flex", alignItems: "center", justifyContent: "center",
                             color: "#fff", fontWeight: 700, fontSize: "0.95rem"
                           }}>
-                            {user.name.charAt(0).toUpperCase()}
+                            {(user.name || "?").charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <div style={{ fontWeight: 600, color: "#1f2937", fontSize: "0.875rem" }}>{user.name}</div>
+                            <div style={{ fontWeight: 600, color: "#1f2937", fontSize: "0.875rem" }}>{user.name || "-"}</div>
                             {session && session.userId === user._id && (
                               <span style={{ fontSize: "0.7rem", color: "#10b981", fontWeight: 600 }}>Anda</span>
                             )}
@@ -566,7 +566,7 @@ export default function AdminDashboardPage() {
                         </div>
                       </td>
                       <td style={{ padding: "14px 16px", color: "#4b5563", fontSize: "0.875rem" }}>
-                        {user.email}
+                        {user.email || "-"}
                       </td>
                       <td style={{ padding: "14px 16px" }}>
                         <span style={{
@@ -585,6 +585,7 @@ export default function AdminDashboardPage() {
                       <td style={{ padding: "14px 16px", textAlign: "right" }}>
                         <div style={{ display: "inline-flex", gap: "8px" }}>
                           <button
+                            type="button"
                             onClick={() => handleEditClick(user)}
                             style={{
                               background: "#fff", border: "1px solid #e5e7eb",
@@ -606,6 +607,7 @@ export default function AdminDashboardPage() {
                           </button>
                           {(!session || session.userId !== user._id) && (
                             <button
+                              type="button"
                               onClick={() => handleDeleteClick(user)}
                               style={{
                                 background: "#fff", border: "1px solid #fecaca",
